@@ -1,0 +1,31 @@
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Обработка платежа - ИнтерВектор</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="payment-page">
+    <div class="payment-container">
+      <div class="payment-status">
+        <h2>Обработка платежа</h2>
+        <div class="payment-details">
+          <p>Сумма: <strong>{{amount}} ₽</strong></p>
+          <p>Способ оплаты: <strong>{{methodText}}</strong></p>
+        </div>
+        <div class="payment-progress">
+          <div class="loader"></div>
+          <p>Ожидание подтверждения платежа...</p>
+        </div>
+        <div class="payment-actions">
+          <a href="/dashboard#balance" class="btn-secondary">Вернуться в личный
+            кабинет</a>
+        </div>
+      </div>
+    </div>
+    <script>
+      setTimeout(() => { window.location.href = '/payment-success?id={{paymentId}}';
+      }, 3000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Платеж успешно выполнен - ИнтерВектор</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="payment-page">
+    <div class="payment-container">
+      <div class="payment-status success">
+        <h2>Платеж успешно выполнен</h2>
+        <div class="payment-details">
+          <p>Сумма: <strong>{{amount}} ₽</strong></p>
+          <p>Способ оплаты: <strong>{{methodText}}</strong></p>
+          <p>Номер платежа: {{paymentId}}</p>
+        </div>
+        <div class="payment-success-icon">
+          <svg viewBox="0 0 24 24" width="48" height="48">
+            <path
+              fill="currentColor"
+              d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"
+            />
+          </svg>
+        </div>
+        <div class="payment-actions">
+          <a href="/dashboard#balance" class="btn-primary">Вернуться в личный
+            кабинет</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

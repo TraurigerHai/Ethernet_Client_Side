@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <title>Личный кабинет - ИнтерВектор</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://unpkg.com/inputmask@5/dist/inputmask.min.js"></script>
+    <script src="/js/dashboard.js" defer></script>
+    <script src="/js/documents.js" defer></script>
+    <script src="/js/phone-mask.js" defer></script>
+</head>
+<body class="dashboard-page">
+    <header class="main-header">
+        <div class="header-container">
+            <a href="/" class="logo">ИнтерВектор</a>
+            <div class="user-controls">
+                <a href="/logout" class="btn-logout btn">Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="dashboard-sidebar">
+            <nav class="dashboard-nav">
+                <a href="#tariff" class="nav-item active" data-section="tariff">📄 Мой тариф</a>
+                <a href="#balance" class="nav-item" data-section="balance">💳 Баланс и оплата</a>
+                <a href="#services" class="nav-item" data-section="services">🛠 Мои услуги</a>
+                <a href="#support" class="nav-item" data-section="support">📝 Поддержка</a>
+                <a href="#profile" class="nav-item" data-section="profile">👤 Мои данные</a>
+                <a href="#documents" class="nav-item" data-section="documents">🧾 Документы</a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-content">
+            <section id="tariff" class="dashboard-section active">
+                <h2>Мой тариф</h2>                <div class="tariff-info">
+                    <div class="tariff-info-header">
+                        <h3>{{user.tariff.name}}</h3>
+                        <div class="tariff-badge">Текущий тариф</div>
+                    </div>
+                    <div class="tariff-details">
+                        <div class="tariff-detail-item">
+                            <span class="detail-icon">⚡</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Скорость</span>
+                                <span class="detail-value">{{user.tariff.speed}} Мбит/с</span>
+                            </div>
+                        </div>
+                        <div class="tariff-detail-item">
+                            <span class="detail-icon">💰</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Стоимость</span>
+                                <span class="detail-value">{{user.tariff.price}} ₽/мес</span>
+                            </div>
+                        </div>
+                        <div class="tariff-detail-item">
+                            <span class="detail-icon">📅</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Следующее списание</span>
+                                <span class="detail-value">{{formatDate user.nextPayment}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-change-tariff" onclick="showTariffModal()">
+                        <span class="btn-text">Сменить тариф</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+            </section>
+
+            <section id="balance" class="dashboard-section">
+                <h2>Баланс и оплата</h2>
+                <div class="balance-info">                
+                    <div class="current-balance">
+                        <h3>Текущий баланс</h3>
+                        <p class="balance-amount">{{user.balance}} ₽</p>
+                        <div class="expenses-info">
+                            <div class="expense-item">
+                                <span class="expense-icon">📡</span>
+                                <div class="expense-details">
+                                    <span class="expense-label">Тарифный план</span>
+                                    <span class="expense-value">{{user.tariff.price}} ₽/мес</span>
+                                </div>
+                            </div>
+                            {{#if user.services_total}}
+                            <div class="expense-item">
+                                <span class="expense-icon">⚡</span>
+                                <div class="expense-details">
+                                    <span class="expense-label">Доп. услуги</span>
+                                    <span class="expense-value">{{user.services_total}} ₽/мес</span>
+                                </div>
+                            </div>
+                            {{/if}}
+                            <div class="expense-total">
+                                <span class="total-label">Общий расход</span>
+                                <span class="total-value">{{user.total_expenses}} ₽/мес</span>
+                            </div>
+                        </div>
+                        <button class="btn-submit" onclick="showPaymentModal()">Пополнить баланс</button>
+                    </div>                    
+                    <div class="autopay-settings">
+                        <h3>Автоплатеж</h3>
+                        <div class="autopay-controls">
+                            <label class="switch">
+                                <input type="checkbox" {{#if user.autopayEnabled}}checked{{/if}} onchange="toggleAutopay(this)">
+                                <span class="slider"></span>
+                            </label>
+                            <div class="threshold-control">
+                                <label>Пополнять при балансе ниже:</label>
+                                <div class="threshold-input">                                
+                                    <input type="number" id="autopayThreshold" 
+                                           value="{{user.autopayThreshold}}"
+                                           min="100" max="10000" step="100"
+                                           onchange="updateAutopayThreshold(this)"
+                                           {{#unless user.autopayEnabled}}disabled{{/unless}}>
+                                    <span class="currency">₽</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="payment-history">
+                        <h3>История платежей</h3>
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Сумма</th>
+                                    <th>Способ оплаты</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each payments}}
+                                <tr>
+                                    <td>{{formatDate this.date}}</td>
+                                    <td>{{this.amount}} ₽</td>
+                                    <td>{{this.method}}</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="services" class="dashboard-section">
+                <h2>Мои услуги</h2>                
+                <div class="services-list">                    
+                    {{#each services}}
+                    <div class="service-item {{#if this.enabled}}enabled{{/if}}">
+                        <div class="service-info">
+                            <h3>{{this.name}}</h3>
+                            <p>{{this.description}}</p>
+                            <p class="service-price">{{this.price}} ₽/мес</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" {{#if this.enabled}}checked{{/if}} 
+                                   data-service-id="{{this.id}}" onchange="toggleService(this)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    {{/each}}
+                    {{#if services.length}}
+                    <div class="services-total">
+                        <span class="total-label">Итого за доп. услуги:</span>
+                        <span class="total-value">{{user.services_total}} ₽/мес</span>
+                    </div>
+                    {{/if}}
+                </div>
+            </section>
+
+            <section id="support" class="dashboard-section">
+                <h2>Поддержка</h2>
+                <div class="support-container">                
+                    <div class="new-ticket">
+                        <button class="btn-submit" onclick="showTicketModal()">Открыть заявку</button>
+                    </div>                    
+                    <div class="tickets-history">
+                        <h3>История обращений</h3>
+                        {{#each tickets}}
+                        <div class="ticket-item {{this.status}}">
+                            <div class="ticket-header">
+                                <div class="ticket-main-info">
+                                    <span class="ticket-id">#{{this.id}}</span>
+                                    <h4 class="ticket-subject">{{this.subject}}</h4>
+                                </div>
+                                <span class="ticket-status {{this.status}}">{{this.statusText}}</span>
+                            </div>
+                            <div class="ticket-content">
+                                <p class="ticket-description">{{this.description}}</p>
+                                {{#if this.response}}
+                                <div class="ticket-response">
+                                    <div class="response-header">
+                                        <span class="response-icon">💬</span>
+                                        <span class="response-label">Ответ специалиста</span>
+                                    </div>
+                                    <p>{{this.response}}</p>
+                                </div>
+                                {{/if}}
+                            </div>
+                            <div class="ticket-footer">                                
+                                <div class="ticket-meta">
+                                    <span class="ticket-date">
+                                        <span class="meta-icon">📅</span>
+                                        Создано: {{formatDate this.date}}
+                                    </span>
+                                    {{#if this.closedDate}}
+                                    <span class="ticket-closed-date">
+                                        <span class="meta-icon">✓</span>
+                                        Закрыто: {{formatDate this.closedDate}}
+                                    </span>
+                                    {{/if}}
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                    <div class="support-chat" id="supportChat">
+                        <div class="chat-messages" id="chatMessages">
+                            {{#each chatMessages}}
+                            <div class="message {{#if this.isSupport}}support{{else}}user{{/if}}">
+                                <span class="message-time">{{formatTime this.time}}</span>
+                                <p>{{this.text}}</p>
+                            </div>
+                            {{/each}}
+                        </div>
+                        <div class="chat-input">
+                            <input type="text" id="messageInput" placeholder="Введите сообщение...">
+                            <button onclick="sendMessage()">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="profile" class="dashboard-section">
+                <h2>Мои данные</h2>
+                <div class="profile-info">
+                    <form id="profileForm" onsubmit="updateProfile(event)">
+                        <div class="form-group">
+                            <label>ФИО</label>
+                            <input type="text" name="fullName" value="{{user.full_name}}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="tel" name="phone" value="{{user.phone}}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" value="{{user.email}}">
+                        </div>
+                        <div class="form-group">
+                            <label>Адрес</label>
+                            <input type="text" name="address" value="{{user.address}}" required>
+                        </div>                        
+                        <button type="submit" class="btn-submit">Сохранить изменения</button>
+                    </form>
+                    <div class="password-change">
+                        <h3>Сменить пароль</h3>
+                        <form id="passwordForm" onsubmit="updatePassword(event)">
+                            <div class="form-group">
+                                <label>Текущий пароль</label>
+                                <input type="password" name="currentPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Новый пароль</label>
+                                <input type="password" name="newPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Подтвердите пароль</label>
+                                <input type="password" name="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn-submit">Изменить пароль</button>
+                        </form>
+                    </div>
+                </div>
+            </section>            
+            <section id="documents" class="dashboard-section">
+                <h2>Документы</h2>
+                <div class="documents-list">
+                    <h3>Счета</h3>
+                    {{#each documents}}
+                    {{#if (eq this.type "invoice")}}
+                    <div class="document-item invoice" data-date="{{this.date}}">
+                        <div class="document-info">
+                            <span class="doc-name">{{this.name}}</span>
+                            <span class="doc-date">{{formatDate this.date}}</span>
+                            <span class="doc-status {{this.status}}">{{#if (eq this.status "paid")}}Оплачен{{else}}Не оплачен{{/if}}</span>
+                        </div>
+                        <div class="document-actions">                            
+                            <button class="btn-preview" onclick="documentPreview.show('{{this.id}}', 'invoice')">
+                                <span class="icon">👁</span>
+                                Просмотр
+                            </button>
+                            <button class="btn-download" onclick="documentPreview.download('{{this.id}}', 'invoice')">
+                                <span class="icon">⬇</span>
+                                Скачать
+                            </button>
+                        </div>
+                    </div>
+                    {{/if}}
+                    {{/each}}
+
+                    <h3>Договоры</h3>
+                    {{#each documents}}
+                    {{#if (eq this.type "contract")}}
+                    <div class="document-item contract" data-date="{{this.date}}">
+                        <div class="document-info">
+                            <span class="doc-name">{{this.name}}</span>
+                            <span class="doc-date">{{formatDate this.date}}</span>
+                        </div>
+                        <div class="document-actions">                            
+                            <button class="btn-preview" onclick="documentPreview.show('{{this.id}}', 'contract')">
+                                <span class="icon">👁</span>
+                                Просмотр
+                            </button>
+                            <button class="btn-download" onclick="documentPreview.download('{{this.id}}', 'contract')">
+                                <span class="icon">⬇</span>
+                                Скачать
+                            </button>
+                        </div>
+                    </div>
+                    {{/if}}
+                    {{/each}}
+
+                    <h3>Акты выполненных работ</h3>
+                    {{#each documents}}
+                    {{#if (eq this.type "act")}}
+                    <div class="document-item act" data-date="{{this.date}}">
+                        <div class="document-info">
+                            <span class="doc-name">{{this.name}}</span>
+                            <span class="doc-date">{{formatDate this.date}}</span>
+                        </div>
+                        <div class="document-actions">                            
+                            <button class="btn-preview" onclick="documentPreview.show('{{this.id}}', 'act')">
+                                <span class="icon">👁</span>
+                                Просмотр
+                            </button>
+                            <button class="btn-download" onclick="documentPreview.download('{{this.id}}', 'act')">
+                                <span class="icon">⬇</span>
+                                Скачать
+                            </button>
+                        </div>
+                    </div>
+                    {{/if}}
+                    {{/each}}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="tariffModal" class="modal">
+        <div class="modal-content">
+            <h2>Выбор тарифа</h2>            
+            <div class="tariffs-list">
+                {{#each tariffs}}                
+                <div class="tariff-option" {{#if (eq this.id ../user.tariff.id)}}data-active="true"{{/if}}>
+                    <div class="tariff-header">
+                        <h3>{{this.name}}</h3>
+                    </div>
+                    <div class="tariff-content">
+                        <div class="speed">
+                            {{this.speed}}<span>Мбит/с</span>
+                        </div>
+                        <div class="price">
+                            {{this.price}}<span>₽/мес</span>
+                        </div>
+                        <div class="features">
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Безлимитный интернет</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Стабильное подключение</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Техподдержка 24/7</span>
+                            </div>
+                        </div>
+                        <button class="btn-tariff" onclick="changeTariff({{this.id}})">
+                            <span class="btn-text">Выбрать тариф</span>
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            <button class="modal-close" onclick="closeTariffModal()">×</button>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h2>Пополнение баланса</h2>
+            <form id="paymentForm" onsubmit="processPayment(event)">
+                <div class="form-group">
+                    <label>Сумма</label>
+                    <input type="number" name="amount" min="1" required>
+                </div>
+                <div class="payment-methods">
+                    <label class="payment-method">
+                        <input type="radio" name="method" value="card" checked>
+                        <span>Банковская карта</span>
+                    </label>
+                    <label class="payment-method">
+                        <input type="radio" name="method" value="sbp">
+                        <span>СБП</span>
+                    </label>
+                </div>            
+                <button type="submit" class="btn-submit">Оплатить</button>
+            </form>
+            <button class="modal-close" onclick="closePaymentModal()">×</button>
+        </div>
+    </div>
+
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <h2>Новая заявка</h2>
+            <form id="ticketForm" onsubmit="submitTicket(event)">
+                <div class="form-group">
+                    <label>Тема</label>
+                    <select name="subject" required>
+                        <option value="no_internet">Нет интернета</option>
+                        <option value="slow_speed">Низкая скорость</option>
+                        <option value="tech_support">Техническая поддержка</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Описание проблемы</label>
+                    <textarea name="description" required></textarea>
+                </div>
+                <button type="submit" class="btn-submit">Отправить</button>
+            </form>
+            <button class="modal-close" onclick="closeTicketModal()">×</button>
+        </div>
+    </div>
+</body>
+</html>
